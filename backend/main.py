@@ -29,6 +29,14 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def home():
+    return {
+        "status": "running",
+        "message": "AI Shopping Agent Backend Live"
+    }
+
+
 @app.get("/api/health")
 async def health_check():
     return {
