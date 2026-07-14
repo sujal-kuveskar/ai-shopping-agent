@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { searchProducts, ProductItem } from "@/lib/api";
+import { searchProducts, AgentSearchResponse } from "@/lib/api";
 
 export default function Home() {
   const [category, setCategory] = useState("");
   const [budget, setBudget] = useState("");
   const [preferences, setPreferences] = useState("");
-  const [result, setResult] = useState<ProductItem | null>(null);
+
+  const [result, setResult] = useState<AgentSearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
+
 
   async function handleSearch() {
     if (!category.trim() || !budget) {
@@ -19,32 +21,44 @@ export default function Home() {
     setLoading(true);
     setResult(null);
 
+
     try {
       const data = await searchProducts({
         category,
         budget: Number(budget),
         preferences,
       });
+
       setResult(data);
+
     } catch (error) {
       console.error(error);
       alert("Failed to get recommendation. Please try again.");
+
     } finally {
       setLoading(false);
     }
   }
 
+
   return (
     <main className="min-h-screen p-10">
-      <h1 className="text-3xl font-bold mb-6">AI Shopping Agent</h1>
+
+      <h1 className="text-3xl font-bold mb-6">
+        AI Shopping Agent
+      </h1>
+
 
       <div className="space-y-4 max-w-md">
+
         <input
           className="border p-2 w-full"
           placeholder="Product category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         />
+
+
         <input
           type="number"
           className="border p-2 w-full"
@@ -52,12 +66,16 @@ export default function Home() {
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
         />
+
+
         <input
           className="border p-2 w-full"
           placeholder="Preferences"
           value={preferences}
           onChange={(e) => setPreferences(e.target.value)}
         />
+
+
         <button
           className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
           onClick={handleSearch}
@@ -65,69 +83,105 @@ export default function Home() {
         >
           {loading ? "Searching..." : "Search Product"}
         </button>
+
       </div>
 
+
+
       {result && (
-  <div className="mt-8 max-w-xl border rounded-lg p-6 shadow">
 
-    <h2 className="text-2xl font-bold mb-4">
-      ⭐ Recommendation
-    </h2>
-
-    <h3 className="text-xl font-semibold">
-      {result.title}
-    </h3>
-
-    <p className="mt-2">
-      💰 Price: ${result.price}
-    </p>
-
-    <p>
-      🛒 Source: {result.source}
-    </p>
+        <div className="mt-8 max-w-xl border rounded-lg p-6 shadow">
 
 
-    <div className="mt-4">
-      <h4 className="font-bold text-green-600">
-        Pros
-      </h4>
-
-      <ul className="list-disc ml-5">
-        {result.pros.map((item, index)=>(
-          <li key={index}>
-            ✓ {item}
-          </li>
-        ))}
-      </ul>
-    </div>
+          <h2 className="text-2xl font-bold mb-4">
+            ⭐ Recommendation
+          </h2>
 
 
-    <div className="mt-4">
-      <h4 className="font-bold text-red-600">
-        Cons
-      </h4>
-
-      <ul className="list-disc ml-5">
-        {result.cons.map((item,index)=>(
-          <li key={index}>
-            ✗ {item}
-          </li>
-        ))}
-      </ul>
-    </div>
+          <h3 className="text-xl font-semibold">
+            {result.recommended_product.title}
+          </h3>
 
 
-    <a
-      href={result.product_url}
-      target="_blank"
-      className="inline-block mt-5 bg-black text-white px-4 py-2 rounded"
-    >
-      View Product
-    </a>
+          <p className="mt-2">
+            💰 Price: ${result.recommended_product.price}
+          </p>
 
 
-  </div>
-)}
+          <p>
+            🛒 Source: {result.recommended_product.source}
+          </p>
+
+
+
+          <div className="mt-4">
+
+            <h4 className="font-bold text-green-600">
+              Pros
+            </h4>
+
+
+            <ul className="list-disc ml-5">
+
+              {result.recommended_product.pros.map(
+                (item, index) => (
+                  <li key={index}>
+                    ✓ {item}
+                  </li>
+                )
+              )}
+
+            </ul>
+
+          </div>
+
+
+
+
+          <div className="mt-4">
+
+            <h4 className="font-bold text-red-600">
+              Cons
+            </h4>
+
+
+            <ul className="list-disc ml-5">
+
+              {result.recommended_product.cons.map(
+                (item, index) => (
+                  <li key={index}>
+                    ✗ {item}
+                  </li>
+                )
+              )}
+
+            </ul>
+
+          </div>
+
+
+
+
+          <a
+            href={result.recommended_product.product_url}
+            target="_blank"
+            className="inline-block mt-5 bg-black text-white px-4 py-2 rounded"
+          >
+            View Product
+          </a>
+
+
+
+          <p className="mt-5 text-sm text-gray-600">
+            {result.analysis_summary}
+          </p>
+
+
+        </div>
+
+      )}
+
+
     </main>
   );
 }
