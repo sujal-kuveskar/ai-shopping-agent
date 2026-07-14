@@ -68,13 +68,66 @@ export default function Home() {
       </div>
 
       {result && (
-        <div className="mt-8 border p-5 rounded">
-          <h2 className="text-xl font-bold">Recommendation</h2>
-          <pre className="mt-3 text-sm">
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </div>
-      )}
+  <div className="mt-8 max-w-xl border rounded-lg p-6 shadow">
+
+    <h2 className="text-2xl font-bold mb-4">
+      ⭐ Recommendation
+    </h2>
+
+    <h3 className="text-xl font-semibold">
+      {result.title}
+    </h3>
+
+    <p className="mt-2">
+      💰 Price: ${result.price}
+    </p>
+
+    <p>
+      🛒 Source: {result.source}
+    </p>
+
+
+    <div className="mt-4">
+      <h4 className="font-bold text-green-600">
+        Pros
+      </h4>
+
+      <ul className="list-disc ml-5">
+        {result.pros.map((item, index)=>(
+          <li key={index}>
+            ✓ {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+
+    <div className="mt-4">
+      <h4 className="font-bold text-red-600">
+        Cons
+      </h4>
+
+      <ul className="list-disc ml-5">
+        {result.cons.map((item,index)=>(
+          <li key={index}>
+            ✗ {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+
+    <a
+      href={result.product_url}
+      target="_blank"
+      className="inline-block mt-5 bg-black text-white px-4 py-2 rounded"
+    >
+      View Product
+    </a>
+
+
+  </div>
+)}
     </main>
   );
 }
