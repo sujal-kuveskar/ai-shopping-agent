@@ -1,6 +1,5 @@
-from typing import Dict, Any, List
+from typing import Dict, Any
 from urllib.parse import quote_plus
-import re
 
 from langgraph.graph import StateGraph, START, END
 
@@ -23,8 +22,9 @@ async def search_discovery_node(state: AgentState) -> Dict[str, Any]:
     category_query = quote_plus(state["category"])
 
     target_urls = [
-        f"https://www.amazon.com/s?k={category_query}",
-        f"https://www.bestbuy.com/site/searchpage.jsp?st={category_query}"
+        f"https://www.bestbuy.com/site/searchpage.jsp?st={category_query}",
+        f"https://www.walmart.com/search?q={category_query}",
+        f"https://www.newegg.com/p/pl?d={category_query}"
     ]
 
     return {
@@ -33,32 +33,9 @@ async def search_discovery_node(state: AgentState) -> Dict[str, Any]:
     }
 
 
-def _extract_amazon_product_links(listing_text: str, base_count: int = 3) -> List[str]:
-    """
-    Pulls individual Amazon product page URLs out of a scraped
-    search-results listing page's markdown/text content.
-    """
-    # Amazon product links follow a pattern like /dp/ASIN or /gp/product/ASIN
-    pattern = r"https?://(?:www\.)?amazon\.com/[^\s\)]*?/(?:dp|gp/product)/([A-Z0-9]{10})"
-    matches = re.findall(pattern, listing_text)
-
-    seen = set()
-    product_urls = []
-    for asin in matches:
-        if asin not in seen:
-            seen.add(asin)
-            product_urls.append(f"https://www.amazon.com/dp/{asin}")
-        if len(product_urls) >= base_count:
-            break
-
-    return product_urls
-
-
 async def collection_scraper_node(state: AgentState) -> Dict[str, Any]:
     """
-    Node 2: Scrapes search listing pages, extracts individual
-    product links from them, then scrapes those specific product
-    pages so the analyzer gets clean, single-product content.
+    Node 2: Scrapes each retailer's search listing page.
     """
 
     listing_urls = state.get("target_urls", [])
@@ -75,21 +52,7 @@ async def collection_scraper_node(state: AgentState) -> Dict[str, Any]:
             print(f"--- EMPTY LISTING CONTENT for {listing_url} ---")
             continue
 
-        if "amazon.com" in listing_url:
-            product_links = _extract_amazon_product_links(listing_text)
-        else:
-            # Best Buy / other retailers: fall back to analyzing the
-            # listing page directly for now.
-            product_links = [listing_url]
-
-        for product_url in product_links:
-            try:
-                product_text = await scraper_service.fetch_page_text(product_url)
-            except Exception as error:
-                print(f"--- PRODUCT SCRAPE FAILURE for {product_url}: {str(error)} ---")
-                product_text = ""
-
-            product_page_entries.append({"url": product_url, "text": product_text})
+        product_page_entries.append({"url": listing_url, "text": listing_text})
 
     return {
         "scraped_raw_data": product_page_entries,
