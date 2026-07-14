@@ -1,5 +1,6 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from urllib.parse import quote_plus
+import re
 
 from langgraph.graph import StateGraph, START, END
 
@@ -32,27 +33,66 @@ async def search_discovery_node(state: AgentState) -> Dict[str, Any]:
     }
 
 
+def _extract_amazon_product_links(listing_text: str, base_count: int = 3) -> List[str]:
+    """
+    Pulls individual Amazon product page URLs out of a scraped
+    search-results listing page's markdown/text content.
+    """
+    # Amazon product links follow a pattern like /dp/ASIN or /gp/product/ASIN
+    pattern = r"https?://(?:www\.)?amazon\.com/[^\s\)]*?/(?:dp|gp/product)/([A-Z0-9]{10})"
+    matches = re.findall(pattern, listing_text)
+
+    seen = set()
+    product_urls = []
+    for asin in matches:
+        if asin not in seen:
+            seen.add(asin)
+            product_urls.append(f"https://www.amazon.com/dp/{asin}")
+        if len(product_urls) >= base_count:
+            break
+
+    return product_urls
+
+
 async def collection_scraper_node(state: AgentState) -> Dict[str, Any]:
     """
-    Node 2: Scrapes webpage content using Browserbase.
-    Hardened: isolates failures per-URL so one bad scrape
-    doesn't take down the whole node.
+    Node 2: Scrapes search listing pages, extracts individual
+    product links from them, then scrapes those specific product
+    pages so the analyzer gets clean, single-product content.
     """
 
-    urls_to_scrape = state.get("target_urls", [])
-    raw_results = []
+    listing_urls = state.get("target_urls", [])
+    product_page_entries = []
 
-    for url in urls_to_scrape:
+    for listing_url in listing_urls:
         try:
-            text = await scraper_service.fetch_page_text(url)
+            listing_text = await scraper_service.fetch_page_text(listing_url)
         except Exception as error:
-            print(f"--- SCRAPE FAILURE for {url}: {str(error)} ---")
-            text = ""
+            print(f"--- LISTING SCRAPE FAILURE for {listing_url}: {str(error)} ---")
+            continue
 
-        raw_results.append({"url": url, "text": text})
+        if not listing_text or not listing_text.strip():
+            print(f"--- EMPTY LISTING CONTENT for {listing_url} ---")
+            continue
+
+        if "amazon.com" in listing_url:
+            product_links = _extract_amazon_product_links(listing_text)
+        else:
+            # Best Buy / other retailers: fall back to analyzing the
+            # listing page directly for now.
+            product_links = [listing_url]
+
+        for product_url in product_links:
+            try:
+                product_text = await scraper_service.fetch_page_text(product_url)
+            except Exception as error:
+                print(f"--- PRODUCT SCRAPE FAILURE for {product_url}: {str(error)} ---")
+                product_text = ""
+
+            product_page_entries.append({"url": product_url, "text": product_text})
 
     return {
-        "scraped_raw_data": raw_results,
+        "scraped_raw_data": product_page_entries,
         "current_step": "Web Scraping Operations Completed"
     }
 
@@ -60,8 +100,6 @@ async def collection_scraper_node(state: AgentState) -> Dict[str, Any]:
 async def synthesis_recommendation_node(state: AgentState) -> Dict[str, Any]:
     """
     Node 3: Uses OpenAI analyzer and creates final recommendation.
-    Hardened: isolates failures per-entry so one bad analysis
-    doesn't take down the whole node.
     """
 
     raw_entries = state.get("scraped_raw_data", [])
@@ -84,8 +122,6 @@ async def synthesis_recommendation_node(state: AgentState) -> Dict[str, Any]:
             print(f"--- ANALYSIS FAILURE for {source_url}: {str(error)} ---")
             continue
 
-        # Only accept extractions that look genuinely valid:
-        # a real price, a non-empty pros list, and not a placeholder title.
         if (
             product.price > 0
             and product.title not in ("ProductItem", "Invalid Product", "Extraction Error")
