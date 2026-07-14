@@ -18,6 +18,7 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://ai-shopping-agent-five.vercel.app",
 ]
 
 app.add_middleware(
