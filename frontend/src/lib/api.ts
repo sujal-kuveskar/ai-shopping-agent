@@ -21,10 +21,15 @@ export interface ProductItem {
 
 
 export interface AgentSearchResponse {
+
   query: string;
+
   recommended_product: ProductItem;
+
   alternative_options: ProductItem[];
+
   analysis_summary: string;
+
 }
 
 
