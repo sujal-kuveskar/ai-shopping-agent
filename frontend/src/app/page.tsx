@@ -4,6 +4,7 @@ import { useState } from "react";
 import { searchProducts, AgentSearchResponse } from "@/lib/api";
 
 export default function Home() {
+
   const [category, setCategory] = useState("");
   const [budget, setBudget] = useState("");
   const [preferences, setPreferences] = useState("");
@@ -15,9 +16,17 @@ export default function Home() {
   const [error, setError] = useState("");
 
 
+  // USD to INR converter
+  const usdToInr = (usd:number) => {
+    const exchangeRate = 85;
+    return (usd * exchangeRate).toFixed(0);
+  };
+
+
+
   async function handleSearch() {
 
-    // Validation
+
     if (!category.trim() || !budget || Number(budget) <= 0) {
 
       setError(
@@ -25,8 +34,10 @@ export default function Home() {
       );
 
       setResult(null);
+
       return;
     }
+
 
 
     setLoading(true);
@@ -34,16 +45,19 @@ export default function Home() {
     setError("");
 
 
+
     try {
+
 
       setAgentStep(
         "🤖 AI Agent started searching..."
       );
 
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000)
+      await new Promise((resolve)=>
+        setTimeout(resolve,1000)
       );
+
 
 
       setAgentStep(
@@ -51,9 +65,10 @@ export default function Home() {
       );
 
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1200)
+      await new Promise((resolve)=>
+        setTimeout(resolve,1200)
       );
+
 
 
       setAgentStep(
@@ -61,9 +76,10 @@ export default function Home() {
       );
 
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1200)
+      await new Promise((resolve)=>
+        setTimeout(resolve,1200)
       );
+
 
 
       setAgentStep(
@@ -71,18 +87,21 @@ export default function Home() {
       );
 
 
+
       const data = await searchProducts({
 
         category,
 
-        budget: Number(budget),
+        budget:Number(budget),
 
         preferences,
 
       });
 
 
+
       setResult(data);
+
 
 
       setAgentStep(
@@ -90,7 +109,9 @@ export default function Home() {
       );
 
 
-    } catch (error) {
+
+    } catch(error) {
+
 
       console.error(error);
 
@@ -102,11 +123,16 @@ export default function Home() {
 
     } finally {
 
+
       setLoading(false);
+
 
     }
 
+
   }
+
+
 
 
 
@@ -118,6 +144,7 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-6">
         AI Shopping Agent
       </h1>
+
 
 
 
@@ -155,10 +182,10 @@ export default function Home() {
         <button
 
           className="
-          bg-black 
-          text-white 
-          px-5 
-          py-2 
+          bg-black
+          text-white
+          px-5
+          py-2
           rounded
           disabled:opacity-50
           "
@@ -175,6 +202,7 @@ export default function Home() {
             : "Search Product"
           }
 
+
         </button>
 
 
@@ -183,16 +211,17 @@ export default function Home() {
 
 
 
-      {/* AI Workflow Status */}
+
+      {/* AI Workflow */}
 
       {(loading || agentStep) && (
 
         <div className="
-        mt-8 
-        max-w-xl 
-        border 
-        rounded-lg 
-        p-6 
+        mt-8
+        max-w-xl
+        border
+        rounded-lg
+        p-6
         shadow
         ">
 
@@ -220,24 +249,24 @@ export default function Home() {
 
 
 
-      {/* Error Message */}
+      {/* Error */}
 
       {error && (
 
         <div className="
-        mt-8 
-        max-w-xl 
-        border 
-        border-red-400 
-        bg-red-100 
-        rounded-lg 
+        mt-8
+        max-w-xl
+        border
+        border-red-400
+        bg-red-100
+        rounded-lg
         p-5
         ">
 
 
           <h2 className="
-          text-lg 
-          font-bold 
+          text-lg
+          font-bold
           text-red-700
           ">
 
@@ -248,7 +277,7 @@ export default function Home() {
 
 
           <p className="
-          mt-2 
+          mt-2
           text-red-600
           ">
 
@@ -266,23 +295,25 @@ export default function Home() {
 
 
 
-      {/* Product Result */}
+
+      {/* Product */}
 
       {result && (
 
         <div className="
-        mt-8 
-        max-w-xl 
-        border 
-        rounded-lg 
-        p-6 
+        mt-8
+        max-w-xl
+        border
+        rounded-lg
+        p-6
         shadow
         ">
 
 
+
           <h2 className="
-          text-2xl 
-          font-bold 
+          text-2xl
+          font-bold
           mb-4
           ">
 
@@ -293,8 +324,9 @@ export default function Home() {
 
 
 
+
           <h3 className="
-          text-xl 
+          text-xl
           font-semibold
           ">
 
@@ -305,21 +337,39 @@ export default function Home() {
 
 
 
-          <p className="mt-2">
 
-            💰 Price: $
+          <p className="mt-3">
+
+            💰 Price:
+
+            <br/>
+
+            💵 $
             {result.recommended_product.price}
+
+
+            <br/>
+
+
+            🇮🇳 ₹
+            {usdToInr(
+              result.recommended_product.price
+            )}
 
           </p>
 
 
 
-          <p>
+
+
+          <p className="mt-2">
 
             🛒 Source:
+            {" "}
             {result.recommended_product.source}
 
           </p>
+
 
 
 
@@ -330,7 +380,7 @@ export default function Home() {
 
 
             <h4 className="
-            font-bold 
+            font-bold
             text-green-600
             ">
 
@@ -342,12 +392,15 @@ export default function Home() {
 
             <ul className="list-disc ml-5">
 
+
               {
                 result.recommended_product.pros.map(
                   (item,index)=>(
+
                     <li key={index}>
                       ✓ {item}
                     </li>
+
                   )
                 )
               }
@@ -363,11 +416,13 @@ export default function Home() {
 
 
 
+
+
           <div className="mt-4">
 
 
             <h4 className="
-            font-bold 
+            font-bold
             text-red-600
             ">
 
@@ -383,9 +438,11 @@ export default function Home() {
               {
                 result.recommended_product.cons.map(
                   (item,index)=>(
+
                     <li key={index}>
                       ✗ {item}
                     </li>
+
                   )
                 )
               }
@@ -401,6 +458,8 @@ export default function Home() {
 
 
 
+
+
           <a
 
             href={
@@ -410,12 +469,12 @@ export default function Home() {
             target="_blank"
 
             className="
-            inline-block 
-            mt-5 
-            bg-black 
-            text-white 
-            px-4 
-            py-2 
+            inline-block
+            mt-5
+            bg-black
+            text-white
+            px-4
+            py-2
             rounded
             "
 
@@ -423,20 +482,25 @@ export default function Home() {
 
             View Product
 
+
           </a>
 
 
 
 
+
+
+
           <p className="
-          mt-5 
-          text-sm 
+          mt-5
+          text-sm
           text-gray-600
           ">
 
             {result.analysis_summary}
 
           </p>
+
 
 
 
@@ -449,5 +513,6 @@ export default function Home() {
     </main>
 
   );
+
 
 }
