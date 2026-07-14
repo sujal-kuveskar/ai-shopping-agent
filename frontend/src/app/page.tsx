@@ -9,7 +9,8 @@ export default function Home() {
   const [preferences, setPreferences] = useState("");
 
   const [result, setResult] = useState<AgentSearchResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+ const [loading, setLoading] = useState(false);
+const [agentStep, setAgentStep] = useState("");
 
 
   async function handleSearch() {
@@ -19,15 +20,34 @@ export default function Home() {
     }
 
     setLoading(true);
-    setResult(null);
+setResult(null);
+
+setAgentStep("🤖 AI Agent is searching...");
 
 
     try {
-      const data = await searchProducts({
-        category,
-        budget: Number(budget),
-        preferences,
-      });
+      setAgentStep("🌐 Scraping shopping websites...");
+
+await new Promise((resolve) =>
+  setTimeout(resolve, 1200)
+);
+
+
+setAgentStep("🧠 Analyzing products with AI...");
+
+await new Promise((resolve) =>
+  setTimeout(resolve, 1200)
+);
+
+
+setAgentStep("⭐ Selecting best recommendation");
+
+
+const data = await searchProducts({
+  category,
+  budget: Number(budget),
+  preferences,
+});
 
       setResult(data);
 
@@ -36,8 +56,9 @@ export default function Home() {
       alert("Failed to get recommendation. Please try again.");
 
     } finally {
-      setLoading(false);
-    }
+  setLoading(false);
+  setAgentStep("");
+}
   }
 
 
@@ -81,12 +102,25 @@ export default function Home() {
           onClick={handleSearch}
           disabled={loading}
         >
-          {loading ? "Searching..." : "Search Product"}
+          {loading ? "AI Thinking..." : "Search Product"}
         </button>
 
       </div>
 
 
+{loading && (
+  <div className="mt-8 max-w-xl border rounded-lg p-6 shadow">
+
+    <h2 className="text-xl font-bold">
+      AI Shopping Agent
+    </h2>
+
+    <p className="mt-4 animate-pulse">
+      {agentStep}
+    </p>
+
+  </div>
+)}
 
       {result && (
 
