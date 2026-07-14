@@ -40,10 +40,12 @@ class AnalyzerService:
 
             parsed_product.product_url = source_url
 
-            if "amazon" in source_url.lower():
-                parsed_product.source = "Amazon"
-            elif "bestbuy" in source_url.lower():
+            if "bestbuy" in source_url.lower():
                 parsed_product.source = "Best Buy"
+            elif "walmart" in source_url.lower():
+                parsed_product.source = "Walmart"
+            elif "newegg" in source_url.lower():
+                parsed_product.source = "Newegg"
             else:
                 parsed_product.source = "Web Retailer"
 
