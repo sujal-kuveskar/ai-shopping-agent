@@ -501,6 +501,88 @@ export default function Home() {
 
           </p>
 
+{result.alternative_options.length > 0 && (
+
+<div className="mt-8">
+
+<h2 className="text-2xl font-bold mb-4">
+🔄 Alternative Options
+</h2>
+
+
+<div className="space-y-4">
+
+
+{
+result.alternative_options.map(
+(product,index)=>(
+
+
+<div
+key={index}
+className="
+border 
+rounded-lg 
+p-4
+"
+>
+
+
+<h3 className="font-bold text-lg">
+{product.title}
+</h3>
+
+
+<p className="mt-2">
+
+  💰 Price:
+
+  <br />
+
+  💵 ${product.price}
+
+  <br />
+
+  🇮🇳 ₹{usdToInr(product.price)}
+
+</p>
+
+
+<p>
+🛒 Source: {product.source}
+</p>
+
+
+<a
+href={product.product_url}
+target="_blank"
+className="
+inline-block
+mt-3
+bg-gray-800
+text-white
+px-3
+py-2
+rounded
+"
+>
+View Product
+</a>
+
+
+</div>
+
+
+)
+)
+}
+
+
+</div>
+
+</div>
+
+)}
 
 
 
