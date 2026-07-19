@@ -30,11 +30,30 @@ async def search_discovery_node(
 
     target_urls = [
 
+        # 🇮🇳 Indian Stores
+
+        f"https://www.amazon.in/s?k={category_query}",
+
+        f"https://www.flipkart.com/search?q={category_query}",
+
+        f"https://www.croma.com/searchB?q={category_query}",
+
+        f"https://www.reliancedigital.in/search?q={category_query}",
+
+        f"https://www.vijaysales.com/search/{category_query}",
+
+
+        # 🌍 International Stores
+
+        f"https://www.amazon.com/s?k={category_query}",
+
         f"https://www.bestbuy.com/site/searchpage.jsp?st={category_query}",
 
         f"https://www.walmart.com/search?q={category_query}",
 
-        f"https://www.newegg.com/p/pl?d={category_query}"
+        f"https://www.newegg.com/p/pl?d={category_query}",
+
+        f"https://www.ebay.com/sch/i.html?_nkw={category_query}"
 
     ]
 
@@ -105,6 +124,9 @@ async def collection_scraper_node(state: AgentState) -> Dict[str, Any]:
             f"Scraped characters: {len(listing_text)}"
         )
 
+        print("----- FIRST 300 CHARACTERS -----")
+        print(listing_text[:300])
+        print("--------------------------------")
 
         product_page_entries.append(
             {
