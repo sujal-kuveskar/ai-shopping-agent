@@ -6,33 +6,55 @@ from langgraph.graph import StateGraph, START, END
 from agent.state import AgentState
 from services.scraper import scraper_service
 from services.analyzer import analyzer_service
-from schemas.search import AgentSearchResponse, ProductItem
+from schemas.search import (
+    AgentSearchResponse,
+    ProductItem,
+)
 
 
-# ==========================================
-# 1. DEFINE THE GRAPH PROCESSING NODES
-# ==========================================
+# ==========================================================
+# NODE 1 - SEARCH DISCOVERY
+# ==========================================================
 
-
-async def search_discovery_node(state: AgentState) -> Dict[str, Any]:
+async def search_discovery_node(
+    state: AgentState
+) -> Dict[str, Any]:
     """
-    Node 1: Generates retailer search URLs.
+    Builds retailer search URLs based on
+    the user's requested product category.
     """
 
-    category_query = quote_plus(state["category"])
+    category = state["category"].strip()
+
+    category_query = quote_plus(category)
 
     target_urls = [
+
         f"https://www.bestbuy.com/site/searchpage.jsp?st={category_query}",
+
         f"https://www.walmart.com/search?q={category_query}",
+
         f"https://www.newegg.com/p/pl?d={category_query}"
+
     ]
 
-    print("===== SEARCH DISCOVERY =====")
-    print(target_urls)
+    print("\n==============================")
+    print("SEARCH DISCOVERY NODE")
+    print("==============================")
+    print(f"Category : {category}")
+    print("Target URLs:")
+
+    for url in target_urls:
+        print(url)
+
+    print("==============================\n")
 
     return {
+
         "target_urls": target_urls,
+
         "current_step": "Search Discovery Completed"
+
     }
 
 
@@ -122,30 +144,31 @@ async def synthesis_recommendation_node(
 
     for entry in raw_entries:
 
-
         source_url = entry["url"]
         text = entry["text"]
 
-
+        # Skip fallback/error text
+        if (
+            "Error:" in text
+            or "Fallback text:" in text
+            or len(text.strip()) < 100
+        ):
+            print(f"Skipping invalid scrape from {source_url}")
+            continue
 
         try:
-
 
             product = await analyzer_service.parse_product_data(
                 text,
                 source_url
             )
 
-
-            # DEBUG OUTPUT
             print("==============================")
             print("AI EXTRACTED PRODUCT")
             print(product)
             print("==============================")
 
-
         except Exception as error:
-
 
             print(
                 f"--- ANALYSIS FAILURE {source_url}: {error} ---"
@@ -153,40 +176,29 @@ async def synthesis_recommendation_node(
 
             continue
 
-
-
-        # Validate extracted product
-
         if (
             product.price > 0
-            and product.title
-            and product.title != "ProductItem"
-            and product.title != "Extraction Error"
+            and product.title not in (
+                "Extraction Error",
+                "Invalid Product",
+                "ProductItem"
+            )
             and len(product.pros) > 0
         ):
-
 
             if product.price <= state["budget"]:
 
                 extracted_items.append(product)
 
-                print(
-                    "VALID PRODUCT ADDED"
-                )
-
+                print("VALID PRODUCT ADDED")
 
             else:
 
-                print(
-                    "PRODUCT ABOVE USER BUDGET"
-                )
-
+                print("PRODUCT ABOVE USER BUDGET")
 
         else:
 
-            print(
-                "INVALID PRODUCT REMOVED"
-            )
+            print("INVALID PRODUCT REMOVED")
 
 
 
@@ -198,22 +210,24 @@ async def synthesis_recommendation_node(
 
         fallback = ProductItem(
 
-            title=f"AI Recommended {state['category'].title()}",
+            title=f"Standard {state['category'].title()}",
 
             price=state["budget"],
 
-            source="AI Shopping Agent",
+            source="Market Intelligence Engine",
 
             product_url="https://example.com",
 
             pros=[
-                "Matches your selected budget",
-                "Processed through AI recommendation engine"
+                "Matches targeted pricing filters",
+                "Generated from AI fallback engine",
+                "Suitable when live extraction fails"
             ],
 
             cons=[
-                "Live product extraction unavailable currently"
+                "Live retailer product unavailable"
             ]
+
         )
 
 
@@ -238,7 +252,7 @@ async def synthesis_recommendation_node(
 
 
         analysis_summary=
-        "Selected using AI product analysis and budget filtering."
+        "Recommendation generated using AI product extraction, budget filtering, and resilient fallback analysis."
     )
 
 

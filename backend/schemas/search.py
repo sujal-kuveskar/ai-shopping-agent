@@ -4,48 +4,65 @@ from typing import List, Optional
 
 class UserSearchRequest(BaseModel):
     """
-    Blueprint for incoming user requests.
+    Incoming user search request.
     """
 
     category: str = Field(
         ...,
-        description="The product category user is shopping for",
-        examples=["mechanical keyboard"]
+        description="Product category to search",
+        examples=["Gaming Keyboard"]
     )
 
     budget: float = Field(
         ...,
         gt=0,
-        description="Maximum budget constraint",
-        examples=[150.00]
+        description="Maximum user budget",
+        examples=[180]
     )
 
     preferences: Optional[str] = Field(
-        None,
-        description="User requirements and preferences",
-        examples=["RGB lighting, wireless"]
+        default=None,
+        description="Additional user preferences",
+        examples=["RGB, Wireless"]
     )
 
 
 class ProductItem(BaseModel):
     """
-    Blueprint for product information.
+    Product returned by the AI Shopping Agent.
     """
 
     title: str
+
+    # Numeric price
     price: float
-    source: str
-    product_url: str
-    pros: List[str]
-    cons: List[str]
+
+    # Currency returned by retailer
+    currency: str = "USD"
+
+    # Optional INR price (filled only for Indian stores)
+    price_inr: Optional[float] = None
+
+    source: str = ""
+
+    product_url: str = ""
+
+    image_url: str = ""
+
+    pros: List[str] = []
+
+    cons: List[str] = []
 
 
 class AgentSearchResponse(BaseModel):
     """
-    Final AI recommendation response.
+    Final response returned to frontend.
     """
 
     query: str
+
     recommended_product: ProductItem
-    alternative_options: List[ProductItem] = []
+
+    alternative_options: List[ProductItem] = Field(default_factory=list)
+
     analysis_summary: str

@@ -1,31 +1,45 @@
+from urllib.parse import quote_plus
+
 from openai import OpenAI
+
 from core.config import settings
 from schemas.search import ProductItem
 
 
 class AnalyzerService:
     """
-    AI Processing Engine that transforms messy web text into structured product data.
+    AI engine that converts raw scraped webpage text
+    into structured product information.
     """
 
     def __init__(self):
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-    async def parse_product_data(self, raw_text: str, source_url: str) -> ProductItem:
+    async def parse_product_data(
+        self,
+        raw_text: str,
+        source_url: str
+    ) -> ProductItem:
 
         try:
+
             response = self.client.responses.parse(
                 model="gpt-4o-mini",
                 input=[
                     {
                         "role": "system",
                         "content": (
-                            "You are an expert e-commerce data extraction specialist. "
-                            "Extract product information from raw webpage text. "
-                            "Return title, price, exactly 3 pros and exactly 3 cons. "
-                            "Do not create fake products. If the page does not contain "
-                            "a valid product, return title as 'Invalid Product' with "
-                            "price 0 and empty pros/cons."
+                            "You are an expert e-commerce product extraction engine.\n\n"
+                            "Extract ONE real product from the webpage.\n\n"
+                            "Rules:\n"
+                            "- Return only one product.\n"
+                            "- Extract the product title.\n"
+                            "- Extract the numeric price only.\n"
+                            "- Detect the currency (USD, INR, EUR, GBP etc.).\n"
+                            "- Return exactly 3 pros.\n"
+                            "- Return exactly 3 cons.\n"
+                            "- Never invent products.\n"
+                            "- If no real product exists return title 'Invalid Product' and price 0."
                         )
                     },
                     {
@@ -36,34 +50,61 @@ class AnalyzerService:
                 text_format=ProductItem,
             )
 
-            parsed_product = response.output_parsed
+            product = response.output_parsed
 
-            parsed_product.product_url = source_url
+            product.product_url = source_url
 
-            if "bestbuy" in source_url.lower():
-                parsed_product.source = "Best Buy"
-            elif "walmart" in source_url.lower():
-                parsed_product.source = "Walmart"
-            elif "newegg" in source_url.lower():
-                parsed_product.source = "Newegg"
+            product.image_url = (
+                f"https://picsum.photos/seed/{quote_plus(product.title)}/600/600"
+            )
+
+            url = source_url.lower()
+
+            if "bestbuy" in url:
+                product.source = "Best Buy"
+
+            elif "walmart" in url:
+                product.source = "Walmart"
+
+            elif "newegg" in url:
+                product.source = "Newegg"
+
+            elif "amazon" in url:
+                product.source = "Amazon"
+
+            elif "flipkart" in url:
+                product.source = "Flipkart"
+
+            elif "croma" in url:
+                product.source = "Croma"
+
             else:
-                parsed_product.source = "Web Retailer"
+                product.source = "Web Retailer"
 
-            return parsed_product
+            if not product.currency:
+                product.currency = "USD"
+
+            if product.currency.upper() == "USD":
+                product.price_inr = round(product.price * 87, 2)
+
+            return product
 
         except Exception as error:
+
+            print("===== ANALYZER ERROR =====")
+            print(error)
+            print("==========================")
 
             return ProductItem(
                 title="Extraction Error",
                 price=0.0,
+                currency="USD",
+                price_inr=0.0,
                 source="System Error",
                 product_url=source_url,
-                pros=[
-                    "Could not process product data"
-                ],
-                cons=[
-                    str(error)
-                ]
+                image_url="",
+                pros=["Unable to analyze webpage"],
+                cons=[str(error)]
             )
 
 

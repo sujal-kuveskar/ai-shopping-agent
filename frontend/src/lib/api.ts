@@ -12,13 +12,23 @@ export interface SearchProductsRequest {
 
 export interface ProductItem {
   title: string;
+
   price: number;
+
+  currency: string;
+
+  price_inr?: number;
+
   source: string;
+
   product_url: string;
+
+  image_url?: string;
+
   pros: string[];
+
   cons: string[];
 }
-
 
 export interface AgentSearchResponse {
 
